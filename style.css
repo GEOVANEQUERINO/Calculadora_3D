@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #f3f4f6; 
+}
+
+.card { 
+    background: white; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+}
+
+.input-group label { 
+    display: block; 
+    font-size: 0.875rem; 
+    font-weight: 600; 
+    color: #374151; 
+    margin-bottom: 4px; 
+}
+
+.input-field { 
+    width: 100%; 
+    padding: 8px 12px; 
+    border: 1px solid #d1d5db; 
+    border-radius: 6px; 
+    outline: none; 
+    transition: all 0.2s; 
+}
+
+.input-field:focus { 
+    border-color: #2563eb; 
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.tab-active { 
+    border-bottom: 2px solid #2563eb; 
+    color: #2563eb; 
+}
+
+.btn-action {
+    width: 100%;
+    padding: 10px;
+    color: white;
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s, filter 0.2s;
+}
+
+.btn-action:active {
+    transform: scale(0.98);
+}
+
+.btn-action:hover {
+    filter: brightness(1.1);
+}
+
+.btn-small {
+    padding: 8px;
+    color: white;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
