@@ -13,7 +13,7 @@
 
 <div id="loader">
     <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-    <p class="mt-4 text-blue-700 font-extrabold tracking-widest animate-pulse text-sm uppercase">Carregando Sistema...</p>
+    <p class="mt-4 text-blue-700 font-extrabold tracking-widest animate-pulse text-sm uppercase">Sincronizando Dados...</p>
 </div>
 
 <div id="app" class="max-w-7xl mx-auto p-4 md:p-10">
@@ -27,8 +27,8 @@
             <div>
                 <h1 id="display-empresa" class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none">Minha Empresa 3D</h1>
                 <div class="flex items-center gap-2 mt-2">
-                    <span id="status-dot" class="h-2 w-2 bg-slate-300 rounded-full"></span>
-                    <p id="status-text" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Iniciando...</p>
+                    <span id="status-dot" class="h-2 w-2 bg-slate-300 rounded-full transition-colors duration-500"></span>
+                    <p id="status-text" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Verificando Conexão...</p>
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Quantidade</label>
-                            <input type="number" id="proj-qtd" class="input-field" value="1" min="1" title="Quantidade de peças" placeholder="1" oninput="calculate()">
+                            <input type="number" id="proj-qtd" class="input-field" value="1" min="1" placeholder="1" oninput="calculate()">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Peso por Peça (g)</label>
@@ -67,19 +67,16 @@
                         </div>
                     </div>
                     
-                    <!-- BOTÕES DE PRESETS (Materiais) -->
                     <div class="mt-10 pt-8 border-t border-slate-100">
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Selecione o Material (Presets)</label>
-                        <div class="flex flex-wrap gap-3" id="preset-container">
-                            <!-- Inserido dinamicamente pelo JS -->
-                        </div>
+                        <div class="flex flex-wrap gap-3" id="preset-container"></div>
                     </div>
 
                     <div class="mt-10 pt-8 border-t border-slate-100">
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Insumos Extras por Unidade</label>
                         <div class="flex gap-2">
                             <div class="bg-slate-100 p-3 rounded-lg flex items-center"><i data-lucide="package-plus" class="w-5 h-5 text-slate-400"></i></div>
-                            <input type="number" id="input-extra" class="input-field" placeholder="R$ Outros custos (Embalagem, parafusos, etc)" oninput="calculate()">
+                            <input type="number" id="input-extra" class="input-field" placeholder="R$ Custos Adicionais" oninput="calculate()">
                         </div>
                     </div>
                 </div>
@@ -113,9 +110,14 @@
                         <button onclick="saveToCloud()" class="bg-blue-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg">
                             <i data-lucide="save" class="w-5 h-5"></i> Salvar Venda
                         </button>
-                        <button onclick="shareWhatsApp()" class="bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all">
-                            <i data-lucide="message-square" class="w-5 h-5"></i> Enviar WhatsApp
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="exportPDF()" class="bg-slate-800 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black transition-all">
+                                <i data-lucide="file-text" class="w-5 h-5"></i> PDF
+                            </button>
+                            <button onclick="shareWhatsApp()" class="bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all">
+                                <i data-lucide="message-square" class="w-5 h-5"></i> Zap
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,7 +131,7 @@
                         <i data-lucide="list" class="w-8 h-8 text-blue-600"></i> HISTÓRICO DE VENDAS
                     </h2>
                     <button onclick="forceSync()" class="text-blue-600 font-bold flex items-center gap-2 text-sm">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Nuvem
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Sincronizar
                     </button>
                 </div>
                 <div class="overflow-x-auto">
@@ -168,21 +170,21 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Mão de Obra (R$/h)</label>
-                                <input type="number" id="conf-mao-obra" class="input-field" value="25" title="Mão de Obra em reais por hora" oninput="calculate()">
+                                <input type="number" id="conf-mao-obra" class="input-field" value="25" placeholder="Mão de Obra (R$/h)" oninput="calculate()">
                             </div>
                             <div>
                                 <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Lucro Desejado (%)</label>
-                                <input type="number" id="conf-lucro" class="input-field" value="50" title="Lucro Desejado em percentual" oninput="calculate()">
+                                <input type="number" id="conf-lucro" class="input-field" value="50" placeholder="Lucro Desejado (%)" oninput="calculate()">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Taxa Marketplace (%)</label>
-                                <input type="number" id="conf-taxa-mkt" class="input-field" value="18" title="Taxa Marketplace em percentual" oninput="calculate()">
+                                <input type="number" id="conf-taxa-mkt" class="input-field" placeholder="Taxa Marketplace (%)" value="18" oninput="calculate()">
                             </div>
                             <div>
-                                <label for="conf-taxa-fixa" class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Taxa Fixa/Item (R$)</label>
-                                <input type="number" id="conf-taxa-fixa" class="input-field" value="6" placeholder="Ex: 6.00" oninput="calculate()">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Taxa Fixa/Item (R$)</label>
+                                <input type="number" id="conf-taxa-fixa" class="input-field" placeholder="Taxa Fixa/Item (R$)" value="6" oninput="calculate()">
                             </div>
                         </div>
                     </div>
@@ -190,15 +192,11 @@
 
                 <div class="card p-8">
                     <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
-                        <i data-lucide="layers" class="w-6 h-6 text-blue-600"></i> CONFIGURAR MATERIAIS (PRESETS)
+                        <i data-lucide="layers" class="w-6 h-6 text-blue-600"></i> CONFIGURAR MATERIAIS
                     </h2>
-                    <p class="text-xs text-slate-400 mb-6">Defina o nome e o custo (R$/kg) dos botões que aparecem na tela principal.</p>
-                    
-                    <div id="config-preset-list" class="space-y-4">
-                        <!-- Inputs gerados via JS -->
-                    </div>
-
-                    <button onclick="saveAndGoBack()" class="w-full mt-10 bg-slate-900 text-white p-4 rounded-xl font-bold hover:bg-black transition-all">SALVAR TUDO E VOLTAR</button>
+                    <p class="text-xs text-slate-400 mb-6">Valores por quilo para os presets da calculadora.</p>
+                    <div id="config-preset-list" class="space-y-4"></div>
+                    <button onclick="saveAndGoBack()" class="w-full mt-10 bg-slate-900 text-white p-4 rounded-xl font-bold hover:bg-black transition-all">SALVAR E VOLTAR</button>
                 </div>
             </div>
         </section>
