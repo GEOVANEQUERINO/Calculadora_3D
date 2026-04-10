@@ -16,7 +16,7 @@
     let app, auth, db, user = null;
     let isOffline = true;
 
-    // MATERIAIS PADRÃO
+    // MATERIAIS PADRÃO (PRESETS)
     let materials = [
         { nome: "PLA", valor: 120 },
         { nome: "PETG", valor: 140 },
@@ -28,12 +28,11 @@
         isOffline = !online;
         const dot = document.getElementById('status-dot');
         const text = document.getElementById('status-text');
-        dot.className = online ? "h-2 w-2 bg-green-500 rounded-full" : "h-2 w-2 bg-orange-500 rounded-full";
-        text.textContent = online ? "Firebase Conectado" : "Offline / Local Storage";
+        if (dot) dot.className = online ? "h-2 w-2 bg-green-500 rounded-full" : "h-2 w-2 bg-orange-500 rounded-full";
+        if (text) text.textContent = online ? "Firebase Conectado" : "Offline / Local Storage";
     };
 
     const init = async () => {
-        // Carrega Local Storage primeiro para não ficar vazio
         loadLocalSettings();
         renderLocalHistory();
         
@@ -42,7 +41,6 @@
             auth = getAuth(app);
             db = getFirestore(app);
 
-            // Tenta logar. Se falhar (ex: domínio não autorizado), cai no catch.
             await signInAnonymously(auth);
             
             onAuthStateChanged(auth, async (u) => {
@@ -54,7 +52,7 @@
                 }
             });
         } catch (e) {
-            console.warn("Firebase bloqueado (Domínio/Config):", e.message);
+            console.warn("Firebase offline:", e.message);
             updateUIStatus(false);
         } finally {
             document.getElementById('loader').style.display = 'none';
@@ -65,37 +63,56 @@
 
     window.changeTab = (tab) => {
         ['calculadora', 'historico', 'config'].forEach(t => {
-            document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+            const el = document.getElementById(`tab-${t}`);
+            if(el) el.classList.toggle('hidden', t !== tab);
+            
             const btn = document.getElementById(`btn-tab-${t === 'calculadora' ? 'calc' : t === 'historico' ? 'hist' : 'conf'}`);
-            btn.className = t === tab ? 'px-8 py-3 font-bold tab-active' : 'px-8 py-3 font-bold text-slate-500';
+            if(btn) btn.className = t === tab ? 'px-8 py-3 font-bold tab-active transition-all' : 'px-8 py-3 font-bold text-slate-500 hover:text-blue-600 transition-all';
         });
+        
+        if (tab === 'calculadora') renderMaterialSelectors();
         if (tab === 'config') renderConfigMaterials();
         calculate();
     };
 
+    // RENDERIZA OS BOTÕES DE MATERIAL NA ABA PRINCIPAL
     window.renderMaterialSelectors = () => {
         const container = document.getElementById('preset-container');
         if (!container) return;
         container.innerHTML = '';
+        
         materials.forEach(m => {
             const isActive = currentMaterial.nome === m.nome;
             const btn = document.createElement('button');
-            btn.className = `px-6 py-3 rounded-xl border-2 font-bold text-xs ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-100 text-slate-500'}`;
+            btn.className = `px-6 py-3 rounded-xl border-2 font-bold text-[11px] transition-all ${isActive ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white border-slate-100 text-slate-500 hover:bg-slate-50'}`;
             btn.textContent = `${m.nome} (R$${m.valor}/kg)`;
-            btn.onclick = () => { currentMaterial = m; renderMaterialSelectors(); calculate(); };
+            btn.onclick = () => { 
+                currentMaterial = m; 
+                renderMaterialSelectors(); 
+                calculate(); 
+            };
             container.appendChild(btn);
         });
     };
 
+    // RENDERIZA A LISTA DE EDIÇÃO NA ABA DE CONFIGURAÇÕES
     window.renderConfigMaterials = () => {
         const container = document.getElementById('config-preset-list');
+        if (!container) return;
         container.innerHTML = '';
+        
         materials.forEach((m, i) => {
             const div = document.createElement('div');
-            div.className = "flex gap-2";
+            div.className = "flex gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100";
             div.innerHTML = `
-                <input type="text" value="${m.nome}" class="input-field text-xs flex-1" onchange="materials[${i}].nome=this.value">
-                <input type="number" value="${m.valor}" class="input-field text-xs w-24" onchange="materials[${i}].valor=parseFloat(this.value)">
+                <div class="flex-1">
+                    <label class="text-[9px] font-bold text-slate-400 block mb-1">NOME</label>
+                    <input type="text" value="${m.nome}" class="input-field text-xs py-2" oninput="materials[${i}].nome=this.value">
+                </div>
+                <div class="w-24">
+                    <label class="text-[9px] font-bold text-slate-400 block mb-1">R$/KG</label>
+                    <input type="number" value="${m.valor}" class="input-field text-xs py-2" oninput="materials[${i}].valor=parseFloat(this.value) || 0">
+                </div>
             `;
             container.appendChild(div);
         });
@@ -124,11 +141,17 @@
         const taxaMktReal = (precoVenda - (taxaFixa * qtd)) * (taxaMktPct/100);
 
         const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById('res-custo-mat').textContent = fmt(custoFilamento);
-        document.getElementById('res-mao-obra').textContent = fmt(custoMaoObra);
-        document.getElementById('res-taxa-mkt').textContent = fmt(taxaMktReal);
-        document.getElementById('res-lucro-liquido').textContent = fmt(lucroReal);
-        document.getElementById('res-total').textContent = fmt(precoVenda);
+        
+        const updateText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        updateText('res-custo-mat', fmt(custoFilamento));
+        updateText('res-mao-obra', fmt(custoMaoObra));
+        updateText('res-taxa-mkt', fmt(taxaMktReal));
+        updateText('res-lucro-liquido', fmt(lucroReal));
+        updateText('res-total', fmt(precoVenda));
 
         return { precoVenda, lucroReal, qtd };
     };
@@ -155,7 +178,10 @@
         document.getElementById('conf-lucro').value = d.lucro || 50;
         document.getElementById('conf-taxa-mkt').value = d.taxaMkt || 18;
         document.getElementById('conf-taxa-fixa').value = d.taxaFixa || 6;
-        if (d.materials) materials = d.materials;
+        if (d.materials) {
+            materials = d.materials;
+            currentMaterial = materials[0];
+        }
         updateBrand();
         renderMaterialSelectors();
         calculate();
@@ -171,10 +197,13 @@
             taxaFixa: document.getElementById('conf-taxa-fixa').value,
             materials: materials
         };
+        
         localStorage.setItem('maker3d_v3_settings', JSON.stringify(data));
-        if (user) {
+        
+        if (user && !isOffline) {
             try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'prefs'), data); } catch(e){}
         }
+        
         changeTab('calculadora');
     };
 
@@ -189,7 +218,6 @@
             data: new Date().toISOString()
         };
 
-        // Local sempre salva
         const hist = JSON.parse(localStorage.getItem('maker3d_v3_history') || '[]');
         hist.push(entry);
         localStorage.setItem('maker3d_v3_history', JSON.stringify(hist));
@@ -221,6 +249,7 @@
 
     const renderTable = (docs, fromCloud) => {
         const list = document.getElementById('history-list');
+        if (!list) return;
         list.innerHTML = '';
         docs.sort((a,b) => new Date(b.data) - new Date(a.data)).forEach((it, idx) => {
             const tr = document.createElement('tr');
@@ -242,7 +271,8 @@
     };
 
     window.deleteRow = async (id, fromCloud) => {
-        if (fromCloud && user) {
+        if (!confirm("Excluir venda?")) return;
+        if (fromCloud && user && !isOffline) {
             await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'history', id));
         } else {
             const hist = JSON.parse(localStorage.getItem('maker3d_v3_history') || '[]');
@@ -253,12 +283,14 @@
     };
 
     window.forceSync = () => {
-        if (user) syncCloudHistory();
-        else alert("Firebase não conectado. Verifique os domínios permitidos no console.");
+        if (user && !isOffline) syncCloudHistory();
+        else alert("Firebase não conectado.");
     };
 
     window.updateBrand = () => {
-        document.getElementById('display-empresa').textContent = document.getElementById('conf-empresa').value || "Minha Empresa 3D";
+        const el = document.getElementById('display-empresa');
+        const input = document.getElementById('conf-empresa');
+        if (el && input) el.textContent = input.value || "Minha Empresa 3D";
     };
 
     window.shareWhatsApp = () => {

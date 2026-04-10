@@ -13,21 +13,22 @@
 
 <div id="loader">
     <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-    <p class="mt-4 text-blue-700 font-extrabold tracking-widest animate-pulse text-sm uppercase" id="loader-text">Sincronizando...</p>
+    <p class="mt-4 text-blue-700 font-extrabold tracking-widest animate-pulse text-sm uppercase">Carregando Sistema...</p>
 </div>
 
 <div id="app" class="max-w-7xl mx-auto p-4 md:p-10">
     
+    <!-- CABEÇALHO -->
     <header class="flex flex-col lg:flex-row justify-between items-center mb-12 gap-8">
         <div class="flex items-center gap-5">
-            <div class="bg-blue-600 p-4 rounded-2xl text-white shadow-xl rotate-3 hover:rotate-0 transition-transform">
+            <div class="bg-blue-600 p-4 rounded-2xl text-white shadow-xl">
                 <i data-lucide="box" class="w-10 h-10"></i>                
             </div>
             <div>
                 <h1 id="display-empresa" class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none">Minha Empresa 3D</h1>
                 <div class="flex items-center gap-2 mt-2">
-                    <span id="status-dot" class="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                    <p id="status-text" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Conectando ao Firebase...</p>
+                    <span id="status-dot" class="h-2 w-2 bg-slate-300 rounded-full"></span>
+                    <p id="status-text" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Iniciando...</p>
                 </div>
             </div>
         </div>
@@ -40,6 +41,7 @@
     </header>
 
     <main>
+        <!-- ABA CALCULADORA -->
         <section id="tab-calculadora" class="tab-content grid grid-cols-1 xl:grid-cols-12 gap-8">
             <div class="xl:col-span-8 space-y-6">
                 <div class="card p-8">
@@ -49,11 +51,11 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Nome do Produto</label>
-                            <input type="text" id="proj-nome" class="input-field" placeholder="Ex: Action Figure Batman">
+                            <input type="text" id="proj-nome" class="input-field" placeholder="Ex: Action Figure">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Quantidade</label>
-                            <input type="number" id="proj-qtd" class="input-field" placeholder="1" value="1" min="1" oninput="calculate()">
+                            <input type="number" id="proj-qtd" class="input-field" value="1" min="1" title="Quantidade de peças" placeholder="1" oninput="calculate()">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Peso por Peça (g)</label>
@@ -65,96 +67,69 @@
                         </div>
                     </div>
                     
+                    <!-- BOTÕES DE PRESETS (Materiais) -->
                     <div class="mt-10 pt-8 border-t border-slate-100">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Material de Impressão</label>
-                        <div class="flex flex-wrap gap-3" id="preset-container"></div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Selecione o Material (Presets)</label>
+                        <div class="flex flex-wrap gap-3" id="preset-container">
+                            <!-- Inserido dinamicamente pelo JS -->
+                        </div>
                     </div>
 
                     <div class="mt-10 pt-8 border-t border-slate-100">
-                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Insumos Extras (Unitário)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="flex gap-2">
-                                <div class="bg-slate-100 p-3 rounded-lg flex items-center"><i data-lucide="package-plus" class="w-5 h-5 text-slate-400"></i></div>
-                                <input type="number" id="input-extra" class="input-field" placeholder="R$ Outros materiais (ex: argola, imã)" oninput="calculate()">
-                            </div>
-                            <p class="text-[10px] text-slate-400 flex items-center">Insira o valor que você gasta em acessórios por cada peça impressa.</p>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Insumos Extras por Unidade</label>
+                        <div class="flex gap-2">
+                            <div class="bg-slate-100 p-3 rounded-lg flex items-center"><i data-lucide="package-plus" class="w-5 h-5 text-slate-400"></i></div>
+                            <input type="number" id="input-extra" class="input-field" placeholder="R$ Outros custos (Embalagem, parafusos, etc)" oninput="calculate()">
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- CARD DE RESUMO -->
             <div class="xl:col-span-4 space-y-6">
                 <div class="card p-8 border-t-8 border-blue-600 sticky top-8">
-                    <h2 class="text-2xl font-black mb-8 text-slate-900">RESUMO DE VENDA</h2>
-                    
+                    <h2 class="text-2xl font-black mb-8 text-slate-900">RESUMO</h2>
                     <div class="space-y-4">
-                        <div>
-                            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b pb-1">Custos Diretos</h3>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Filamento</span>
-                                <span id="res-custo-mat" class="font-bold text-slate-700">R$ 0,00</span>
-                            </div>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Extras (Argolas/Imãs)</span>
-                                <span id="res-custo-extra" class="font-bold text-slate-700">R$ 0,00</span>
-                            </div>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Mão de Obra</span>
-                                <span id="res-mao-obra" class="font-bold text-slate-700">R$ 0,00</span>
-                            </div>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Depreciação</span>
-                                <span id="res-depreciacao" class="font-bold text-slate-700">R$ 0,00</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b pb-1">Taxas de Venda</h3>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Comissão Marketplace</span>
-                                <span id="res-taxa-mkt" class="font-bold text-red-400">R$ 0,00</span>
-                            </div>
-                            <div class="resumo-row">
-                                <span class="text-slate-500 text-sm">Custo Fixo Anúncio</span>
-                                <span id="res-taxa-fixa" class="font-bold text-red-400">R$ 0,00</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                        <div class="resumo-row text-sm"><span>Filamento</span><span id="res-custo-mat" class="font-bold">R$ 0,00</span></div>
+                        <div class="resumo-row text-sm"><span>Mão de Obra</span><span id="res-mao-obra" class="font-bold">R$ 0,00</span></div>
+                        <div class="resumo-row text-sm"><span>Comissão Mkt</span><span id="res-taxa-mkt" class="font-bold text-red-500">R$ 0,00</span></div>
+                        
+                        <div class="bg-green-50 p-4 rounded-xl border border-green-100 mt-4">
                             <div class="flex justify-between items-center text-green-800">
-                                <span class="text-xs font-bold uppercase">Lucro Líquido Real</span>
+                                <span class="text-xs font-bold uppercase tracking-widest">Lucro Estimado</span>
                                 <span id="res-lucro-liquido" class="text-lg font-black">R$ 0,00</span>
                             </div>
                         </div>
 
                         <div class="pt-6 border-t-2 border-slate-100">
-                            <div class="flex justify-between items-end">
+                            <div class="flex flex-col">
                                 <span class="text-xs font-black text-blue-600 uppercase">Preço p/ Anúncio</span>
-                                <span id="res-total" class="text-4xl font-black text-blue-700 tracking-tighter">R$ 0,00</span>
+                                <span id="res-total" class="text-4xl font-black text-blue-700">R$ 0,00</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 gap-3 mt-10">
-                         <button onclick="saveToCloud()" class="bg-blue-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">
-                            <i data-lucide="cloud-upload" class="w-5 h-5"></i> Salvar Orçamento
+                        <button onclick="saveToCloud()" class="bg-blue-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg">
+                            <i data-lucide="save" class="w-5 h-5"></i> Salvar Venda
                         </button>
-                         <button onclick="shareWhatsApp()" class="bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all">
-                            <i data-lucide="message-square" class="w-5 h-5"></i> Enviar p/ Cliente
+                        <button onclick="shareWhatsApp()" class="bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all">
+                            <i data-lucide="message-square" class="w-5 h-5"></i> Enviar WhatsApp
                         </button>
                     </div>
                 </div>
             </div>
         </section>
 
+        <!-- ABA HISTÓRICO -->
         <section id="tab-historico" class="tab-content hidden">
             <div class="card p-8">
                 <div class="flex justify-between items-center mb-10">
                     <h2 class="text-2xl font-black flex items-center gap-3">
-                        <i data-lucide="database" class="w-8 h-8 text-blue-600"></i> HISTÓRICO DE VENDAS
+                        <i data-lucide="list" class="w-8 h-8 text-blue-600"></i> HISTÓRICO DE VENDAS
                     </h2>
-                    <button onclick="syncHistory()" class="text-blue-600 font-bold flex items-center gap-2 text-sm">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                    <button onclick="forceSync()" class="text-blue-600 font-bold flex items-center gap-2 text-sm">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Nuvem
                     </button>
                 </div>
                 <div class="overflow-x-auto">
@@ -164,86 +139,66 @@
                                 <th class="pb-4">Data</th>
                                 <th class="pb-4">Produto</th>
                                 <th class="pb-4 text-center">Qtd</th>
-                                <th class="pb-4 text-right">Preço Venda</th>
+                                <th class="pb-4 text-right">Venda</th>
                                 <th class="pb-4 text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="history-list" class="divide-y divide-slate-50"></tbody>
+                        <tbody id="history-list"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
+        <!-- ABA CONFIGURAÇÕES -->
         <section id="tab-config" class="tab-content hidden">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="space-y-8">
-                    <div class="card p-8">
-                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
-                            <i data-lucide="store" class="w-6 h-6 text-blue-600"></i> PERFIL DA LOJA
-                        </h2>
-                        <div class="space-y-6">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Nome da Empresa</label>
-                                <input type="text" id="conf-empresa" class="input-field" placeholder="Ex: IMPRESSÃO3DBRASIL" oninput="updateBrand()">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">WhatsApp Vendas</label>
-                                <input type="text" id="conf-whatsapp" class="input-field" placeholder="Ex: 5511999999999">
-                            </div>
+                <div class="card p-8">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i data-lucide="store" class="w-6 h-6 text-blue-600"></i> PERFIL E TAXAS
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Nome da Empresa</label>
+                            <input type="text" id="conf-empresa" class="input-field" placeholder="Digite o nome da sua empresa" oninput="updateBrand()">
                         </div>
-                    </div>
-
-                    <div class="card p-8">
-                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3 text-red-600">
-                            <i data-lucide="percent" class="w-6 h-6"></i> TAXAS DE MARKETPLACE
-                        </h2>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">WhatsApp (DDD + Número)</label>
+                            <input type="text" id="conf-whatsapp" class="input-field" placeholder="5511999999999">
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Comissão (%)</label>
-                                <input type="number" id="conf-taxa-mkt" class="input-field border-red-100 bg-red-50" value="18" title="Comissão de Marketplace em percentual" oninput="calculate()">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Mão de Obra (R$/h)</label>
+                                <input type="number" id="conf-mao-obra" class="input-field" value="25" title="Mão de Obra em reais por hora" oninput="calculate()">
                             </div>
                             <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Custo Fixo/Anúncio (R$)</label>
-                                <input type="number" id="conf-taxa-fixa" class="input-field border-red-100 bg-red-50" value="6" title="Custo fixo por anúncio em reais" oninput="calculate()">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Lucro Desejado (%)</label>
+                                <input type="number" id="conf-lucro" class="input-field" value="50" title="Lucro Desejado em percentual" oninput="calculate()">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Taxa Marketplace (%)</label>
+                                <input type="number" id="conf-taxa-mkt" class="input-field" value="18" title="Taxa Marketplace em percentual" oninput="calculate()">
+                            </div>
+                            <div>
+                                <label for="conf-taxa-fixa" class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Taxa Fixa/Item (R$)</label>
+                                <input type="number" id="conf-taxa-fixa" class="input-field" value="6" placeholder="Ex: 6.00" oninput="calculate()">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="space-y-8">
-                    <div class="card p-8">
-                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
-                            <i data-lucide="cpu" class="w-6 h-6 text-blue-600"></i> CUSTO DE MÁQUINA
-                        </h2>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Valor Máquina (R$)</label>
-                                <input type="number" id="conf-maquina-valor" class="input-field" value="5000" title="Valor da máquina em reais" oninput="calculate()">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Vida Útil (Horas)</label>
-                                <input type="number" id="conf-maquina-vida" class="input-field" value="4000" title="Vida útil da máquina em horas" oninput="calculate()">
-                            </div>
-                        </div>
+                <div class="card p-8">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-3">
+                        <i data-lucide="layers" class="w-6 h-6 text-blue-600"></i> CONFIGURAR MATERIAIS (PRESETS)
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-6">Defina o nome e o custo (R$/kg) dos botões que aparecem na tela principal.</p>
+                    
+                    <div id="config-preset-list" class="space-y-4">
+                        <!-- Inputs gerados via JS -->
                     </div>
 
-                    <div class="card p-8">
-                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
-                            <i data-lucide="coins" class="w-6 h-6 text-blue-600"></i> MARGENS E MATERIAIS
-                        </h2>
-                        <div class="grid grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Mão de Obra/h (R$)</label>
-                                <input type="number" id="conf-mao-obra" class="input-field" value="25" title="Valor da mão de obra por hora em reais" oninput="calculate()">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Lucro Líquido (%)</label>
-                                <input type="number" id="conf-lucro" class="input-field" value="50" title="Percentual de lucro líquido desejado" oninput="calculate()">
-                            </div>
-                        </div>
-                        <div id="config-preset-list" class="space-y-3"></div>
-                        <button onclick="saveAndGoBack()" class="mt-10 w-full bg-slate-900 text-white p-4 rounded-xl font-black hover:bg-black transition-all">SALVAR CONFIGURAÇÕES</button>
-                    </div>
+                    <button onclick="saveAndGoBack()" class="w-full mt-10 bg-slate-900 text-white p-4 rounded-xl font-bold hover:bg-black transition-all">SALVAR TUDO E VOLTAR</button>
                 </div>
             </div>
         </section>
