@@ -3,246 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IMPRESSÃO3DBRASIL - Calculadora de Projetos</title>
-    <!-- Tailwind CSS para estilização rápida -->
+    <title>IMPRESSÃO3DBRASIL - Gestão de Vendas</title>
+    
+    <!-- BIBLIOTECAS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Ícones Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Ligação ao ficheiro CSS externo -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="shortcut icon" href="img/logo.png" type="logo-impressao3Dbrasil">
 </head>
 <body>
 
-<div id="app" class="max-w-5xl mx-auto p-4 md:p-8">
-    <!-- Cabeçalho e Navegação -->
-    <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-3 rounded-lg text-white">
-              <i data-lucide="printer" class="w-8 h-8"></i>                 
+<div id="loader">
+    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
+    <p class="mt-4 text-blue-700 font-extrabold tracking-widest animate-pulse text-sm uppercase" id="loader-text">Sincronizando...</p>
+</div>
+
+<div id="app" class="max-w-7xl mx-auto p-4 md:p-10">
+    
+    <header class="flex flex-col lg:flex-row justify-between items-center mb-12 gap-8">
+        <div class="flex items-center gap-5">
+            <div class="bg-blue-600 p-4 rounded-2xl text-white shadow-xl rotate-3 hover:rotate-0 transition-transform">
+                <i data-lucide="box" class="w-10 h-10"></i>                
             </div>
             <div>
-                <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">IMPRESSÃO3DBRASIL</h1>
-                <p class="text-sm text-gray-500 italic">Soluções em Fabricação Digital</p>
+                <h1 id="display-empresa" class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none">Minha Empresa 3D</h1>
+                <div class="flex items-center gap-2 mt-2">
+                    <span id="status-dot" class="h-2 w-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                    <p id="status-text" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Conectando ao Firebase...</p>
+                </div>
             </div>
         </div>
-        <div class="flex gap-2">
-            <button onclick="changeTab('calculadora')" id="btn-tab-calc" class="px-4 py-2 font-medium tab-active">Calculadora</button>
-            <button onclick="changeTab('historico')" id="btn-tab-hist" class="px-4 py-2 font-medium text-gray-500">Histórico</button>
-            <button onclick="changeTab('config')" id="btn-tab-conf" class="px-4 py-2 font-medium text-gray-500">Configurações</button>
-        </div>
+        
+        <nav class="flex bg-white p-1.5 rounded-2xl shadow-inner border border-slate-200">
+            <button onclick="changeTab('calculadora')" id="btn-tab-calc" class="px-8 py-3 font-bold tab-active transition-all">Calculadora</button>
+            <button onclick="changeTab('historico')" id="btn-tab-hist" class="px-8 py-3 font-bold text-slate-500 hover:text-blue-600 transition-all">Vendas</button>
+            <button onclick="changeTab('config')" id="btn-tab-conf" class="px-8 py-3 font-bold text-slate-500 hover:text-blue-600 transition-all">Ajustes</button>
+        </nav>
     </header>
 
     <main>
-        <!-- ABA CALCULADORA -->
-        <section id="tab-calculadora" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Informações do Projeto -->
-                <div class="card p-6">
-                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i> Informações do Projeto
+        <section id="tab-calculadora" class="tab-content grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div class="xl:col-span-8 space-y-6">
+                <div class="card p-8">
+                    <h2 class="text-xl font-bold mb-8 flex items-center gap-3 text-slate-800">
+                        <i data-lucide="clipboard-list" class="w-6 h-6 text-blue-600"></i> DADOS DO ORÇAMENTO
                     </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label>Nome do Projeto</label>
-                            <input type="text" id="proj-nome" class="input-field" placeholder="Ex: Estátua Batman">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Nome do Produto</label>
+                            <input type="text" id="proj-nome" class="input-field" placeholder="Ex: Action Figure Batman">
                         </div>
-                        <div class="input-group">
-                            <label>Nome do Cliente</label>
-                            <input type="text" id="proj-cliente" class="input-field" placeholder="Nome do comprador">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Quantidade</label>
+                            <input type="number" id="proj-qtd" class="input-field" placeholder="1" value="1" min="1" oninput="calculate()">
                         </div>
-                        <div class="input-group">
-                            <label>Quantidade Produzida</label>
-                            <input type="number" id="proj-qtd" class="input-field" value="1" oninput="calculate()">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Peso por Peça (g)</label>
+                            <input type="number" id="input-peso" class="input-field" placeholder="0.00" oninput="calculate()">
                         </div>
-                    </div>
-                </div>
-
-                <!-- Detalhes Técnicos -->
-                <div class="card p-6">
-                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                        <i data-lucide="settings-2" class="w-5 h-5 text-blue-600"></i> Detalhes Técnicos
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label>Peso (ex: 150g ou 1kg)</label>
-                            <input type="text" id="input-peso" class="input-field" placeholder="Peso total" onblur="formatPeso(this)" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>Tempo (ex: 1h:30m ou 1.5)</label>
-                            <input type="text" id="input-tempo" class="input-field" placeholder="Tempo de impressão" onblur="formatTempo(this)" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>Custo do Material (R$/kg)</label>
-                            <input type="number" id="custo-material-kg" class="input-field" value="120" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>Outros Custos (Embalagem, etc)</label>
-                            <input type="number" id="custo-extra" class="input-field" value="0" oninput="calculate()">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Tempo por Peça (h)</label>
+                            <input type="number" id="input-tempo" class="input-field" placeholder="0.00" oninput="calculate()">
                         </div>
                     </div>
                     
-                    <div class="mt-6">
-                        <label class="block text-sm font-semibold mb-2">Presets Rápidos</label>
-                        <div class="flex flex-wrap gap-2">
-                            <button onclick="setMaterial(110)" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full border">PLA (R$110)</button>
-                            <button onclick="setMaterial(130)" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full border">PETG (R$130)</button>
-                            <button onclick="setMaterial(180)" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full border">ABS (R$180)</button>
-                            <button onclick="setMaterial(250)" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full border">Resina (R$250)</button>
-                        </div>
+                    <div class="mt-10 pt-8 border-t border-slate-100">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Material de Impressão</label>
+                        <div class="flex flex-wrap gap-3" id="preset-container"></div>
                     </div>
-                </div>
-                
-                <!-- Margens e Taxas -->
-                <div class="card p-6">
-                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                        <i data-lucide="percent" class="w-5 h-5 text-blue-600"></i> Margens e Taxas
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="input-group">
-                            <label>Taxa Marketplace (%)</label>
-                            <input type="number" id="taxa-mkp" class="input-field" value="12" oninput="calculate()">
-                        </div>
-                        <div class="input-group">
-                            <label>Lucro Desejado - Markup (%)</label>
-                            <input type="number" id="markup" class="input-field" value="100" oninput="calculate()">
+
+                    <div class="mt-10 pt-8 border-t border-slate-100">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 block">Insumos Extras (Unitário)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex gap-2">
+                                <div class="bg-slate-100 p-3 rounded-lg flex items-center"><i data-lucide="package-plus" class="w-5 h-5 text-slate-400"></i></div>
+                                <input type="number" id="input-extra" class="input-field" placeholder="R$ Outros materiais (ex: argola, imã)" oninput="calculate()">
+                            </div>
+                            <p class="text-[10px] text-slate-400 flex items-center">Insira o valor que você gasta em acessórios por cada peça impressa.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Resumo Financeiro e Raio-X -->
-            <div class="space-y-6">
-                <div class="card p-6 border-2 border-blue-600 sticky top-4">
-                    <h2 class="text-xl font-bold mb-6 text-center">Resumo de Venda</h2>
+            <div class="xl:col-span-4 space-y-6">
+                <div class="card p-8 border-t-8 border-blue-600 sticky top-8">
+                    <h2 class="text-2xl font-black mb-8 text-slate-900">RESUMO DE VENDA</h2>
                     
-                    <div class="space-y-4 mb-6">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Custo Base (Produção)</span>
-                            <span id="res-custo-base" class="font-bold">R$ 0,00</span>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b pb-1">Custos Diretos</h3>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Filamento</span>
+                                <span id="res-custo-mat" class="font-bold text-slate-700">R$ 0,00</span>
+                            </div>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Extras (Argolas/Imãs)</span>
+                                <span id="res-custo-extra" class="font-bold text-slate-700">R$ 0,00</span>
+                            </div>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Mão de Obra</span>
+                                <span id="res-mao-obra" class="font-bold text-slate-700">R$ 0,00</span>
+                            </div>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Depreciação</span>
+                                <span id="res-depreciacao" class="font-bold text-slate-700">R$ 0,00</span>
+                            </div>
                         </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-gray-500">Impostos/Taxas</span>
-                            <span id="res-taxas" class="font-bold">R$ 0,00</span>
+
+                        <div>
+                            <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b pb-1">Taxas de Venda</h3>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Comissão Marketplace</span>
+                                <span id="res-taxa-mkt" class="font-bold text-red-400">R$ 0,00</span>
+                            </div>
+                            <div class="resumo-row">
+                                <span class="text-slate-500 text-sm">Custo Fixo Anúncio</span>
+                                <span id="res-taxa-fixa" class="font-bold text-red-400">R$ 0,00</span>
+                            </div>
                         </div>
-                        <div class="flex justify-between text-lg border-t pt-2">
-                            <span>Preço Total</span>
-                            <span id="res-preco-total" class="font-bold text-blue-700">R$ 0,00</span>
+
+                        <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                            <div class="flex justify-between items-center text-green-800">
+                                <span class="text-xs font-bold uppercase">Lucro Líquido Real</span>
+                                <span id="res-lucro-liquido" class="text-lg font-black">R$ 0,00</span>
+                            </div>
                         </div>
-                        <div class="flex justify-between text-sm text-green-600 font-semibold italic">
-                            <span>Preço Unitário</span>
-                            <span id="res-preco-unit">R$ 0,00</span>
+
+                        <div class="pt-6 border-t-2 border-slate-100">
+                            <div class="flex justify-between items-end">
+                                <span class="text-xs font-black text-blue-600 uppercase">Preço p/ Anúncio</span>
+                                <span id="res-total" class="text-4xl font-black text-blue-700 tracking-tighter">R$ 0,00</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Gráficos de Barra -->
-                    <div class="space-y-3">
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raio-X de Custos</label>
-                        <div>
-                            <div class="flex justify-between text-[10px] mb-1"><span>Material</span><span id="label-p-mat">0%</span></div>
-                            <div class="w-full bg-gray-100 rounded-full h-1.5"><div id="bar-mat" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-[10px] mb-1"><span>Energia/Depreciação</span><span id="label-p-ops">0%</span></div>
-                            <div class="w-full bg-gray-100 rounded-full h-1.5"><div id="bar-ops" class="bg-orange-400 h-1.5 rounded-full" style="width: 0%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-[10px] mb-1"><span>Taxas</span><span id="label-p-tax">0%</span></div>
-                            <div class="w-full bg-gray-100 rounded-full h-1.5"><div id="bar-tax" class="bg-red-400 h-1.5 rounded-full" style="width: 0%"></div></div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-[10px] mb-1"><span>Lucro Real</span><span id="label-p-lucro">0%</span></div>
-                            <div class="w-full bg-gray-100 rounded-full h-1.5"><div id="bar-lucro" class="bg-green-500 h-1.5 rounded-full" style="width: 0%"></div></div>
-                        </div>
-                    </div>
-
-                    <div id="alerta-lucro" class="hidden mt-4 p-2 bg-yellow-100 text-yellow-800 text-xs rounded border border-yellow-200">
-                        ⚠️ Atenção: Margem de lucro muito baixa!
-                    </div>
-
-                    <div class="mt-6 space-y-2">
-                        <button onclick="magicArredondar()" class="btn-action bg-purple-600">
-                            <i data-lucide="wand-2" class="w-4 h-4"></i> Magic Button ( ,90 )
+                    <div class="grid grid-cols-1 gap-3 mt-10">
+                         <button onclick="saveToCloud()" class="bg-blue-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">
+                            <i data-lucide="cloud-upload" class="w-5 h-5"></i> Salvar Orçamento
                         </button>
-                        <button onclick="saveBudget()" class="btn-action bg-blue-600">
-                            <i data-lucide="save" class="w-4 h-4"></i> Salvar Orçamento
+                         <button onclick="shareWhatsApp()" class="bg-emerald-500 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all">
+                            <i data-lucide="message-square" class="w-5 h-5"></i> Enviar p/ Cliente
                         </button>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="shareWhatsApp()" class="btn-small bg-green-500">
-                                <i data-lucide="message-circle" class="w-4 h-4"></i> Zap
-                            </button>
-                            <button onclick="exportCSV()" class="btn-small bg-gray-700">
-                                <i data-lucide="download" class="w-4 h-4"></i> CSV
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- ABA HISTÓRICO -->
-        <section id="tab-historico" class="hidden">
-            <div class="card p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold">Histórico de Orçamentos</h2>
-                    <button onclick="clearAllHistory()" class="text-sm text-red-600 font-semibold hover:underline">Limpar Tudo</button>
+        <section id="tab-historico" class="tab-content hidden">
+            <div class="card p-8">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-2xl font-black flex items-center gap-3">
+                        <i data-lucide="database" class="w-8 h-8 text-blue-600"></i> HISTÓRICO DE VENDAS
+                    </h2>
+                    <button onclick="syncHistory()" class="text-blue-600 font-bold flex items-center gap-2 text-sm">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                    </button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="p-3 text-sm font-bold">Projeto</th>
-                                <th class="p-3 text-sm font-bold">Cliente</th>
-                                <th class="p-3 text-sm font-bold">Data</th>
-                                <th class="p-3 text-sm font-bold">Valor</th>
-                                <th class="p-3 text-sm font-bold">Ações</th>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-slate-400 text-[10px] uppercase font-black border-b pb-4">
+                                <th class="pb-4">Data</th>
+                                <th class="pb-4">Produto</th>
+                                <th class="pb-4 text-center">Qtd</th>
+                                <th class="pb-4 text-right">Preço Venda</th>
+                                <th class="pb-4 text-center">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="lista-historico"></tbody>
+                        <tbody id="history-list" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
             </div>
         </section>
 
-        <!-- ABA CONFIGURAÇÕES -->
-        <section id="tab-config" class="hidden">
-            <div class="card p-6 max-w-2xl mx-auto">
-                <h2 class="text-xl font-bold mb-6">Configurações Gerais da Oficina</h2>
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b pb-4">
-                        <div class="input-group">
-                            <label>Custo Energia (R$/kWh)</label>
-                            <input type="number" id="conf-kwh" class="input-field" value="0.85">
-                        </div>
-                        <div class="input-group">
-                            <label>Consumo Impressora (Watts)</label>
-                            <input type="number" id="conf-watts" class="input-field" value="100">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b pb-4">
-                        <div class="input-group">
-                            <label>Valor da Máquina (R$)</label>
-                            <input type="number" id="conf-valor-maq" class="input-field" value="2500">
-                        </div>
-                        <div class="input-group">
-                            <label>Vida Útil (Horas)</label>
-                            <input type="number" id="conf-vida-maq" class="input-field" value="5000">
+        <section id="tab-config" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="space-y-8">
+                    <div class="card p-8">
+                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
+                            <i data-lucide="store" class="w-6 h-6 text-blue-600"></i> PERFIL DA LOJA
+                        </h2>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Nome da Empresa</label>
+                                <input type="text" id="conf-empresa" class="input-field" placeholder="Ex: IMPRESSÃO3DBRASIL" oninput="updateBrand()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">WhatsApp Vendas</label>
+                                <input type="text" id="conf-whatsapp" class="input-field" placeholder="Ex: 5511999999999">
+                            </div>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <label for="conf-risco">Margem de Risco / Falha (%)</label>
-                        <input type="number" id="conf-risco" class="input-field" value="10" placeholder="10" title="Margem de Risco / Falha (%)">
+
+                    <div class="card p-8">
+                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3 text-red-600">
+                            <i data-lucide="percent" class="w-6 h-6"></i> TAXAS DE MARKETPLACE
+                        </h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Comissão (%)</label>
+                                <input type="number" id="conf-taxa-mkt" class="input-field border-red-100 bg-red-50" value="18" title="Comissão de Marketplace em percentual" oninput="calculate()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Custo Fixo/Anúncio (R$)</label>
+                                <input type="number" id="conf-taxa-fixa" class="input-field border-red-100 bg-red-50" value="6" title="Custo fixo por anúncio em reais" oninput="calculate()">
+                            </div>
+                        </div>
                     </div>
-                    <div class="pt-4">
-                        <button onclick="saveConfigs()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Salvar Configurações Globais</button>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="card p-8">
+                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
+                            <i data-lucide="cpu" class="w-6 h-6 text-blue-600"></i> CUSTO DE MÁQUINA
+                        </h2>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Valor Máquina (R$)</label>
+                                <input type="number" id="conf-maquina-valor" class="input-field" value="5000" title="Valor da máquina em reais" oninput="calculate()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Vida Útil (Horas)</label>
+                                <input type="number" id="conf-maquina-vida" class="input-field" value="4000" title="Vida útil da máquina em horas" oninput="calculate()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-8">
+                        <h2 class="text-xl font-bold mb-8 border-b pb-4 flex items-center gap-3">
+                            <i data-lucide="coins" class="w-6 h-6 text-blue-600"></i> MARGENS E MATERIAIS
+                        </h2>
+                        <div class="grid grid-cols-2 gap-6 mb-8">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Mão de Obra/h (R$)</label>
+                                <input type="number" id="conf-mao-obra" class="input-field" value="25" title="Valor da mão de obra por hora em reais" oninput="calculate()">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Lucro Líquido (%)</label>
+                                <input type="number" id="conf-lucro" class="input-field" value="50" title="Percentual de lucro líquido desejado" oninput="calculate()">
+                            </div>
+                        </div>
+                        <div id="config-preset-list" class="space-y-3"></div>
+                        <button onclick="saveAndGoBack()" class="mt-10 w-full bg-slate-900 text-white p-4 rounded-xl font-black hover:bg-black transition-all">SALVAR CONFIGURAÇÕES</button>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 </div>
-
-<!-- Importante: O JS deve vir no final do body -->
 <script src="script.js"></script>
+<script type="module">
+    init();
+</script>
 </body>
 </html>

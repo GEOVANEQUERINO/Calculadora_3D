@@ -1,217 +1,268 @@
-// --- ESTADO INICIAL ---
-let history = JSON.parse(localStorage.getItem('i3d_history')) || [];
-let configs = JSON.parse(localStorage.getItem('i3d_configs')) || {
-    kwh: 0.85,
-    watts: 100,
-    valorMaq: 2500,
-    vidaMaq: 5000,
-    risco: 10
-};
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- FUNÇÕES DE INTERFACE (DEFINIDAS NO WINDOW PARA ACESSO GLOBAL) ---
-window.changeTab = function(tab) {
-    document.getElementById('tab-calculadora').classList.add('hidden');
-    document.getElementById('tab-historico').classList.add('hidden');
-    document.getElementById('tab-config').classList.add('hidden');
-    
-    document.getElementById('btn-tab-calc').classList.remove('tab-active');
-    document.getElementById('btn-tab-hist').classList.remove('tab-active');
-    document.getElementById('btn-tab-conf').classList.remove('tab-active');
-    document.getElementById('btn-tab-calc').classList.add('text-gray-500');
-    document.getElementById('btn-tab-hist').classList.add('text-gray-500');
-    document.getElementById('btn-tab-conf').classList.add('text-gray-500');
-
-    document.getElementById(`tab-${tab}`).classList.remove('hidden');
-    const btnId = tab === 'calculadora' ? 'btn-tab-calc' : tab === 'historico' ? 'btn-tab-hist' : 'btn-tab-conf';
-    const activeBtn = document.getElementById(btnId);
-    activeBtn.classList.add('tab-active');
-    activeBtn.classList.remove('text-gray-500');
-};
-
-// --- SMART INPUTS ---
-window.formatPeso = function(el) {
-    let val = el.value.toLowerCase().replace(',', '.');
-    let grams = 0;
-    if (val.includes('kg')) {
-        grams = parseFloat(val) * 1000;
-    } else {
-        grams = parseFloat(val) || 0;
-    }
-    el.dataset.grams = grams;
-    el.value = grams + 'g';
-};
-
-window.formatTempo = function(el) {
-    let val = el.value.toLowerCase().replace(',', '.');
-    let totalHours = 0;
-    if (val.includes(':') || val.includes('h')) {
-        let parts = val.split(/[:h]/);
-        let h = parseFloat(parts[0]) || 0;
-        let m = parseFloat(parts[1]) || 0;
-        totalHours = h + (m / 60);
-        el.value = `${h}h ${m}m`;
-    } else {
-        totalHours = parseFloat(val) || 0;
-        let h = Math.floor(totalHours);
-        let m = Math.round((totalHours - h) * 60);
-        el.value = `${h}h ${m}m`;
-    }
-    el.dataset.decimalHours = totalHours;
-};
-
-window.setMaterial = function(preco) {
-    document.getElementById('custo-material-kg').value = preco;
-    window.calculate();
-};
-
-// --- CÁLCULOS PRINCIPAIS ---
-window.calculate = function() {
-    const pesoG = parseFloat(document.getElementById('input-peso').dataset.grams) || 0;
-    const horas = parseFloat(document.getElementById('input-tempo').dataset.decimalHours) || 0;
-    const materialKg = parseFloat(document.getElementById('custo-material-kg').value) || 0;
-    const custoExtra = parseFloat(document.getElementById('custo-extra').value) || 0;
-    const qtd = parseInt(document.getElementById('proj-qtd').value) || 1;
-    const mkpPerc = parseFloat(document.getElementById('taxa-mkp').value) || 0;
-    const markup = parseFloat(document.getElementById('markup').value) || 0;
-
-    const custoMat = (pesoG / 1000) * materialKg;
-    const custoEnergia = (configs.watts / 1000) * horas * configs.kwh;
-    const custoDepre = (configs.valorMaq / configs.vidaMaq) * horas;
-
-    const baseProducao = custoMat + custoEnergia + custoDepre + custoExtra;
-    const margemRisco = baseProducao * (configs.risco / 100);
-    const custoFinalProducao = baseProducao + margemRisco;
-
-    let precoSemTaxa = custoFinalProducao * (1 + (markup / 100));
-    let precoFinalTotal = (precoSemTaxa / (1 - (mkpPerc / 100))) * qtd;
-
-    if (isNaN(precoFinalTotal)) precoFinalTotal = 0;
-
-    document.getElementById('res-custo-base').innerText = `R$ ${ (custoFinalProducao * qtd).toFixed(2) }`;
-    document.getElementById('res-taxas').innerText = `R$ ${ (precoFinalTotal * (mkpPerc/100)).toFixed(2) }`;
-    document.getElementById('res-preco-total').innerText = `R$ ${precoFinalTotal.toFixed(2)}`;
-    document.getElementById('res-preco-unit').innerText = `R$ ${(precoFinalTotal / qtd).toFixed(2)}`;
-
-    updateVisuals(custoMat * qtd, (custoEnergia + custoDepre) * qtd, precoFinalTotal * (mkpPerc/100), precoFinalTotal);
-    
-    const alerta = document.getElementById('alerta-lucro');
-    if (markup < 20) {
-        alerta.classList.remove('hidden');
-    } else {
-        alerta.classList.add('hidden');
-    }
-};
-
-function updateVisuals(mat, ops, tax, total) {
-    if (total <= 0) return;
-    const pMat = (mat / total) * 100;
-    const pOps = (ops / total) * 100;
-    const pTax = (tax / total) * 100;
-    const pLucro = Math.max(0, 100 - (pMat + pOps + pTax));
-
-    document.getElementById('bar-mat').style.width = pMat + '%';
-    document.getElementById('label-p-mat').innerText = Math.round(pMat) + '%';
-    document.getElementById('bar-ops').style.width = pOps + '%';
-    document.getElementById('label-p-ops').innerText = Math.round(pOps) + '%';
-    document.getElementById('bar-tax').style.width = pTax + '%';
-    document.getElementById('label-p-tax').innerText = Math.round(pTax) + '%';
-    document.getElementById('bar-lucro').style.width = pLucro + '%';
-    document.getElementById('label-p-lucro').innerText = Math.round(pLucro) + '%';
-}
-
-window.magicArredondar = function() {
-    const precoAtual = parseFloat(document.getElementById('res-preco-total').innerText.replace('R$ ', ''));
-    if (precoAtual === 0) return;
-    let novoPreco = Math.ceil(precoAtual) - 0.10;
-    if (novoPreco < precoAtual) novoPreco += 1.0;
-    document.getElementById('res-preco-total').innerText = `R$ ${novoPreco.toFixed(2)}`;
-    document.getElementById('res-preco-unit').innerText = `R$ ${(novoPreco / parseInt(document.getElementById('proj-qtd').value)).toFixed(2)}`;
-};
-
-// --- PERSISTÊNCIA ---
-window.saveConfigs = function() {
-    configs = {
-        kwh: parseFloat(document.getElementById('conf-kwh').value),
-        watts: parseFloat(document.getElementById('conf-watts').value),
-        valorMaq: parseFloat(document.getElementById('conf-valor-maq').value),
-        vidaMaq: parseFloat(document.getElementById('conf-vida-maq').value),
-        risco: parseFloat(document.getElementById('conf-risco').value)
+    const firebaseConfig = {
+        apiKey: "AIzaSyC7Yq9xkRQAEaArEj-BiAjSJw1-yRLdT0s",
+        authDomain: "calculadoramaker3d.firebaseapp.com",
+        projectId: "calculadoramaker3d",
+        storageBucket: "calculadoramaker3d.firebasestorage.app",
+        messagingSenderId: "573950888494",
+        appId: "1:573950888494:web:892640f7b82b06c60eedbf",
+        measurementId: "G-6TTNPLKLVC"
     };
-    localStorage.setItem('i3d_configs', JSON.stringify(configs));
-    alert("Configurações Salvas!");
-    window.calculate();
-};
 
-function loadConfigsToFields() {
-    document.getElementById('conf-kwh').value = configs.kwh;
-    document.getElementById('conf-watts').value = configs.watts;
-    document.getElementById('conf-valor-maq').value = configs.valorMaq;
-    document.getElementById('conf-vida-maq').value = configs.vidaMaq;
-    document.getElementById('conf-risco').value = configs.risco;
-}
+    const appId = "calculadora-v3";
+    let app, auth, db, user = null;
+    let isOffline = true;
 
-window.saveBudget = function() {
-    const nome = document.getElementById('proj-nome').value || "Projeto Sem Nome";
-    const cliente = document.getElementById('proj-cliente').value || "Cliente Final";
-    const valor = document.getElementById('res-preco-total').innerText;
-    const item = { id: Date.now(), nome, cliente, data: new Date().toLocaleDateString('pt-BR'), valor };
-    history.unshift(item);
-    localStorage.setItem('i3d_history', JSON.stringify(history));
-    renderHistory();
-    alert("Orçamento salvo!");
-};
+    // MATERIAIS PADRÃO
+    let materials = [
+        { nome: "PLA", valor: 120 },
+        { nome: "PETG", valor: 140 },
+        { nome: "ABS", valor: 110 }
+    ];
+    let currentMaterial = materials[0];
 
-function renderHistory() {
-    const container = document.getElementById('lista-historico');
-    if(!container) return;
-    container.innerHTML = history.map(item => `
-        <tr class="border-b hover:bg-gray-50 text-sm">
-            <td class="p-3">${item.nome}</td>
-            <td class="p-3">${item.cliente}</td>
-            <td class="p-3">${item.data}</td>
-            <td class="p-3 font-bold text-blue-600">${item.valor}</td>
-            <td class="p-3">
-                <button onclick="deleteHist(${item.id})" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </td>
-        </tr>
-    `).join('');
-    lucide.createIcons();
-}
+    const updateUIStatus = (online) => {
+        isOffline = !online;
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        dot.className = online ? "h-2 w-2 bg-green-500 rounded-full" : "h-2 w-2 bg-orange-500 rounded-full";
+        text.textContent = online ? "Firebase Conectado" : "Offline / Local Storage";
+    };
 
-window.deleteHist = function(id) {
-    history = history.filter(h => h.id !== id);
-    localStorage.setItem('i3d_history', JSON.stringify(history));
-    renderHistory();
-};
+    const init = async () => {
+        // Carrega Local Storage primeiro para não ficar vazio
+        loadLocalSettings();
+        renderLocalHistory();
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
 
-window.clearAllHistory = function() {
-    if(confirm("Deseja apagar todo o histórico?")) {
-        history = [];
-        localStorage.removeItem('i3d_history');
-        renderHistory();
-    }
-};
+            // Tenta logar. Se falhar (ex: domínio não autorizado), cai no catch.
+            await signInAnonymously(auth);
+            
+            onAuthStateChanged(auth, async (u) => {
+                if (u) {
+                    user = u;
+                    updateUIStatus(true);
+                    await loadCloudSettings();
+                    syncCloudHistory();
+                }
+            });
+        } catch (e) {
+            console.warn("Firebase bloqueado (Domínio/Config):", e.message);
+            updateUIStatus(false);
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+            lucide.createIcons();
+            renderMaterialSelectors();
+        }
+    };
 
-window.shareWhatsApp = function() {
-    const nome = document.getElementById('proj-nome').value;
-    const total = document.getElementById('res-preco-total').innerText;
-    const texto = `Olá! Orçamento da *IMPRESSÃO3DBRASIL*:\n*Projeto:* ${nome}\n*Valor Total:* ${total}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-};
+    window.changeTab = (tab) => {
+        ['calculadora', 'historico', 'config'].forEach(t => {
+            document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+            const btn = document.getElementById(`btn-tab-${t === 'calculadora' ? 'calc' : t === 'historico' ? 'hist' : 'conf'}`);
+            btn.className = t === tab ? 'px-8 py-3 font-bold tab-active' : 'px-8 py-3 font-bold text-slate-500';
+        });
+        if (tab === 'config') renderConfigMaterials();
+        calculate();
+    };
 
-window.exportCSV = function() {
-    let csv = "Projeto;Cliente;Data;Valor\n" + history.map(h => `${h.nome};${h.cliente};${h.data};${h.valor}`).join('\n');
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI("data:text/csv;charset=utf-8," + csv));
-    link.setAttribute("download", "historico_orcamentos.csv");
-    document.body.appendChild(link);
-    link.click();
-};
+    window.renderMaterialSelectors = () => {
+        const container = document.getElementById('preset-container');
+        if (!container) return;
+        container.innerHTML = '';
+        materials.forEach(m => {
+            const isActive = currentMaterial.nome === m.nome;
+            const btn = document.createElement('button');
+            btn.className = `px-6 py-3 rounded-xl border-2 font-bold text-xs ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-100 text-slate-500'}`;
+            btn.textContent = `${m.nome} (R$${m.valor}/kg)`;
+            btn.onclick = () => { currentMaterial = m; renderMaterialSelectors(); calculate(); };
+            container.appendChild(btn);
+        });
+    };
 
-// --- INICIALIZAÇÃO ---
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    loadConfigsToFields();
-    renderHistory();
-    window.calculate();
-});
+    window.renderConfigMaterials = () => {
+        const container = document.getElementById('config-preset-list');
+        container.innerHTML = '';
+        materials.forEach((m, i) => {
+            const div = document.createElement('div');
+            div.className = "flex gap-2";
+            div.innerHTML = `
+                <input type="text" value="${m.nome}" class="input-field text-xs flex-1" onchange="materials[${i}].nome=this.value">
+                <input type="number" value="${m.valor}" class="input-field text-xs w-24" onchange="materials[${i}].valor=parseFloat(this.value)">
+            `;
+            container.appendChild(div);
+        });
+    };
+
+    window.calculate = () => {
+        const qtd = parseFloat(document.getElementById('proj-qtd').value) || 1;
+        const peso = parseFloat(document.getElementById('input-peso').value) || 0;
+        const tempo = parseFloat(document.getElementById('input-tempo').value) || 0;
+        const extras = parseFloat(document.getElementById('input-extra').value) || 0;
+
+        const maoObraH = parseFloat(document.getElementById('conf-mao-obra').value) || 25;
+        const lucroPct = parseFloat(document.getElementById('conf-lucro').value) || 50;
+        const taxaMktPct = parseFloat(document.getElementById('conf-taxa-mkt').value) || 18;
+        const taxaFixa = parseFloat(document.getElementById('conf-taxa-fixa').value) || 6;
+
+        const custoFilamento = (peso / 1000) * currentMaterial.valor * qtd;
+        const custoMaoObra = tempo * maoObraH * qtd;
+        const custoTotal = custoFilamento + custoMaoObra + (extras * qtd);
+
+        const divisor = 1 - (lucroPct/100) - (taxaMktPct/100);
+        let precoVenda = divisor > 0 ? (custoTotal / divisor) : (custoTotal * 2);
+        precoVenda += (taxaFixa * qtd);
+
+        const lucroReal = (precoVenda - (taxaFixa * qtd)) * (lucroPct/100);
+        const taxaMktReal = (precoVenda - (taxaFixa * qtd)) * (taxaMktPct/100);
+
+        const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('res-custo-mat').textContent = fmt(custoFilamento);
+        document.getElementById('res-mao-obra').textContent = fmt(custoMaoObra);
+        document.getElementById('res-taxa-mkt').textContent = fmt(taxaMktReal);
+        document.getElementById('res-lucro-liquido').textContent = fmt(lucroReal);
+        document.getElementById('res-total').textContent = fmt(precoVenda);
+
+        return { precoVenda, lucroReal, qtd };
+    };
+
+    // --- PERSISTÊNCIA ---
+
+    const loadLocalSettings = () => {
+        const local = localStorage.getItem('maker3d_v3_settings');
+        if (local) applyData(JSON.parse(local));
+    };
+
+    const loadCloudSettings = async () => {
+        if (!user) return;
+        try {
+            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'prefs'));
+            if (snap.exists()) applyData(snap.data());
+        } catch (e) { console.warn("Erro ao ler nuvem:", e.message); }
+    };
+
+    const applyData = (d) => {
+        document.getElementById('conf-empresa').value = d.empresa || "Minha Empresa 3D";
+        document.getElementById('conf-whatsapp').value = d.whatsapp || "";
+        document.getElementById('conf-mao-obra').value = d.maoObra || 25;
+        document.getElementById('conf-lucro').value = d.lucro || 50;
+        document.getElementById('conf-taxa-mkt').value = d.taxaMkt || 18;
+        document.getElementById('conf-taxa-fixa').value = d.taxaFixa || 6;
+        if (d.materials) materials = d.materials;
+        updateBrand();
+        renderMaterialSelectors();
+        calculate();
+    };
+
+    window.saveAndGoBack = async () => {
+        const data = {
+            empresa: document.getElementById('conf-empresa').value,
+            whatsapp: document.getElementById('conf-whatsapp').value,
+            maoObra: document.getElementById('conf-mao-obra').value,
+            lucro: document.getElementById('conf-lucro').value,
+            taxaMkt: document.getElementById('conf-taxa-mkt').value,
+            taxaFixa: document.getElementById('conf-taxa-fixa').value,
+            materials: materials
+        };
+        localStorage.setItem('maker3d_v3_settings', JSON.stringify(data));
+        if (user) {
+            try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'prefs'), data); } catch(e){}
+        }
+        changeTab('calculadora');
+    };
+
+    window.saveToCloud = async () => {
+        const res = calculate();
+        const nome = document.getElementById('proj-nome').value || "Sem Nome";
+        const entry = {
+            nome,
+            total: res.precoVenda,
+            lucro: res.lucroReal,
+            qtd: res.qtd,
+            data: new Date().toISOString()
+        };
+
+        // Local sempre salva
+        const hist = JSON.parse(localStorage.getItem('maker3d_v3_history') || '[]');
+        hist.push(entry);
+        localStorage.setItem('maker3d_v3_history', JSON.stringify(hist));
+
+        if (user && !isOffline) {
+            try { await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'history'), entry); } catch(e){}
+        }
+        
+        alert("Salvo com sucesso!");
+        renderLocalHistory();
+    };
+
+    const syncCloudHistory = () => {
+        if (!user) return;
+        onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'history'), snap => {
+            const docs = [];
+            snap.forEach(d => docs.push({id: d.id, ...d.data()}));
+            renderTable(docs, true);
+        }, (err) => {
+            updateUIStatus(false);
+            renderLocalHistory();
+        });
+    };
+
+    const renderLocalHistory = () => {
+        const hist = JSON.parse(localStorage.getItem('maker3d_v3_history') || '[]');
+        renderTable(hist, false);
+    };
+
+    const renderTable = (docs, fromCloud) => {
+        const list = document.getElementById('history-list');
+        list.innerHTML = '';
+        docs.sort((a,b) => new Date(b.data) - new Date(a.data)).forEach((it, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-50 text-xs";
+            tr.innerHTML = `
+                <td class="py-4 text-slate-400">${new Date(it.data).toLocaleDateString()}</td>
+                <td class="py-4 font-bold text-slate-800">${it.nome}</td>
+                <td class="py-4 text-center">${it.qtd}</td>
+                <td class="py-4 text-right font-black text-blue-600">${it.total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}</td>
+                <td class="py-4 text-center">
+                    <button onclick="deleteRow('${fromCloud ? it.id : idx}', ${fromCloud})" class="text-slate-300 hover:text-red-500">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            `;
+            list.appendChild(tr);
+        });
+        lucide.createIcons();
+    };
+
+    window.deleteRow = async (id, fromCloud) => {
+        if (fromCloud && user) {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'history', id));
+        } else {
+            const hist = JSON.parse(localStorage.getItem('maker3d_v3_history') || '[]');
+            hist.splice(id, 1);
+            localStorage.setItem('maker3d_v3_history', JSON.stringify(hist));
+            renderLocalHistory();
+        }
+    };
+
+    window.forceSync = () => {
+        if (user) syncCloudHistory();
+        else alert("Firebase não conectado. Verifique os domínios permitidos no console.");
+    };
+
+    window.updateBrand = () => {
+        document.getElementById('display-empresa').textContent = document.getElementById('conf-empresa').value || "Minha Empresa 3D";
+    };
+
+    window.shareWhatsApp = () => {
+        const zap = document.getElementById('conf-whatsapp').value.replace(/\D/g, '');
+        const msg = `Orçamento 3D: *${document.getElementById('proj-nome').value}*\nValor: *${document.getElementById('res-total').textContent}*`;
+        window.open(`https://wa.me/${zap}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
